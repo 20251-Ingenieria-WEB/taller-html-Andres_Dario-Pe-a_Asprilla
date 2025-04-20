@@ -1,0 +1,181 @@
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Personajes - Rick and Morty</title>
+    <style>
+
+      .search-container {
+        position: relative;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .search-container::before {
+        content: '';
+        background-image: url('https://static.wikia.nocookie.net/wiki-de-rick-morty/images/2/2f/Temporada_7.jpg/revision/latest?cb=20230925212754&path-prefix=es');
+        background-size: cover;
+        opacity: 0.3;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -1;
+      }
+
+      input[type="search"] {
+        width: 300px;
+        padding: 12px 20px;
+        border: 3px solid #97ce4c; 
+        border-radius: 25px;
+        font-size: 16px;
+        background-color: rgba(255, 255, 255, 0.9);
+        transition: all 0.3s ease;
+        margin-top: 10px;
+      }
+
+      input[type="search"]:focus {
+        outline: none;
+        box-shadow: 0 0 10px #97ce4c;
+        border-width: 3px;
+      }
+
+      input[type="search"]::placeholder {
+        color: #888;
+        font-style: italic;
+      }
+
+      label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 1.2em;
+        color: #2b2b2b;
+        font-weight: bold;
+        gap: 8px;
+      }
+
+      .character-card {
+        border: 2px solid #97ce4c;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 15px;
+        display: flex;
+        align-items: flex-start;
+        gap: 20px;
+        background-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      
+      .character-image {
+        border-radius: 50%;
+        max-width: 100px;
+        border: 2px solid #97ce4c;
+      }
+      
+      .character-info {
+        flex-grow: 1;
+        color: #333;
+      }
+
+      .search {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin: 20px;
+        position: relative;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="search-container">
+      <search class="search">
+        <label>
+          Buscar personaje:
+          <input type="search" 
+                 id="query" 
+                 placeholder="Ej: Morty"
+                 aria-label="Buscar personajes de Rick and Morty">
+        </label>
+      </search>
+    </div>
+
+    <!-- Sección de resultados -->
+    <section>
+      <h3>Resultados:</h3>
+      <div id="results"></div>
+      <output id="no-results"></output>
+    </section>
+
+
+    <script>
+      // Configuración inicial de la API y elementos DOM
+      const apiUrl = 'https://rickandmortyapi.com/api/character';
+      const input = document.getElementById('query');
+      const resultsContainer = document.getElementById('results');
+      const noResultsOutput = document.getElementById('no-results');
+
+      // Event listener para la entrada de búsqueda
+      input.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.trim();
+        resultsContainer.innerHTML = '';
+        noResultsOutput.textContent = '';
+
+        // Validación de entrada vacía
+        if (!searchTerm) return;
+
+        // Construcción de la URL de la API
+        const url = `${apiUrl}?name=${encodeURIComponent(searchTerm)}`;
+
+        // Fetch a la API
+        fetch(url)
+          .then(response => {
+            // Manejo de errores HTTP
+            if (!response.ok) {
+              if (response.status === 404) throw new Error('No results');
+              throw new Error('Error en la solicitud');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Procesamiento de resultados
+            if (data.results.length > 0) {
+              data.results.forEach(character => {
+                // Creación dinámica de tarjetas
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                card.innerHTML = `
+                  <img src="${character.image}" alt="${character.name}" class="character-image">
+                  <div class="character-info">
+                    <h3>${character.name}</h3>
+                    <p><strong>ID:</strong> ${character.id}</p>
+                    <p><strong>Estado:</strong> ${character.status}</p>
+                    <p><strong>Especie:</strong> ${character.species}</p>
+                    <p><strong>Tipo:</strong> ${character.type || 'N/A'}</p>
+                    <p><strong>Género:</strong> ${character.gender}</p>
+                    <p><strong>Origen:</strong> ${character.origin.name}</p>
+                    <p><strong>Ubicación:</strong> ${character.location.name}</p>
+                    <p><strong>Episodios:</strong> ${character.episode.length}</p>
+                    <p><strong>Creado:</strong> ${new Date(character.created).toLocaleDateString('es-ES')}</p>
+                    <p><strong>URL:</strong> <a href="${character.url}" target="_blank">Ver detalles</a></p>
+                  </div>
+                `;
+                resultsContainer.appendChild(card);
+              });
+            } else {
+              noResultsOutput.textContent = 'No se encontraron personajes';
+            }
+          })
+          .catch(error => {
+            // Manejo de errores de la API
+            noResultsOutput.textContent = error.message === 'No results' 
+              ? 'Personaje no encontrado' 
+              : 'Error al buscar';
+          });
+      });
+    </script>
+  </body>
+</html>
